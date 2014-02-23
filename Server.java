@@ -17,18 +17,27 @@ public class Server {
 	private List <Room> chatrooms;									//A list of open rooms
 	private Room entrance;										//A first room
 
+	/*
+	Program enty point
+	*/
 	public static void main(String argv[]) throws Exception {
 		int portNumber = Integer.parseInt(argv[0]);		//grab the port number from program arguments
 		new Server(portNumber);					//start up a new server and start listening
 	}
 
+	/*
+	Server constructor
+	*/
 	public Server(int portNumber) throws IOException {
 		chatrooms = new ArrayList <Room> ();			//instantiate room list
-		entrance = new Room("Foyer");				//create our entryway
+		entrance = new Room("Entrance");			//create our entryway
 		chatrooms.add(entrance);				//Remember it in list
 		listen(portNumber);					//puts Server class into listening loop
 	}
 
+	/*
+	listen: infinite loop for catching and processing new connections.
+	*/
 	private void listen(int portNumber) throws IOException {
 		ServerSocket socks = new ServerSocket(portNumber);	//make ourselves a new socket server
 		Socket nextSocket;					//a Socket pointer for loop iteration
@@ -42,16 +51,23 @@ public class Server {
 		}
 	}
 
-	public void closeSocket(Socket sock) {
-		System.out.println("Closing socket "+sock);
+	/*
+	removeClient: removes a client (by thread id) from the Server.
+	*/
+	public void removeClient(ServerThread client) {
+		System.out.println("Logging out "+client.getUserName());
 		try {
-			sock.close();				//try to close the socket
+			client.getSocket().close();				//try to close the socket
+			connNames.remove(client.getUserName());
 
 		} catch (IOException ioe) {
-			System.out.println("Error closing socket "+sock);
+			System.out.println("Error closing socket for"+client.getUserName());
 		}
 	}
 
+	/*
+	registerUser: adds a client (by name) to the user-base.
+	*/
 	public boolean registerUser(ServerThread connection, String name) {
 		if (connNames.containsKey(name)) {
 			return false;						//indicates name already used
@@ -62,11 +78,28 @@ public class Server {
 		}
 	}
 
-	public void removeUser(String name) {
-		connNames.remove(name);
+	public Room getRoom(String roomName) {
+		return entrance;
 	}
 
-	public Enumeration getRooms() {
-		return chatrooms.elements();
+	/*
+	getRooms: sends a list of the available rooms on the server to a user.
+	*/
+	public void getRooms(ServerThread user) {
+		try {
+			for (Room R : chatrooms) {
+				user.sendMessage("\t-"+R.getName());
+			}
+		} catch (IOException ioe) {
+			System.out.println("Error sending room data.");
+			ioe.printStackTrace();
+		}
+	}
+
+	/*
+	getClient: returns the ServerThread associated to a username
+	*/
+	public ServerThread getClient(String name) {
+		return connNames.get(name);
 	}
 }
