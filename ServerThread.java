@@ -57,9 +57,9 @@ public class ServerThread extends Thread {
 		
 		try {
 			sendMessage("_________________________________________________________________________________________");
-			sendMessage("____________________________SECRET MESSAGE DELIVERY SERVICE______________________________");
+			sendMessage("__________________________TOP SECRET MESSAGE DELIVERY SERVICE____________________________");
 			sendMessage("___________________________________Theron Rabe. 2014.____________________________________");
-			sendMessage("\r\nHelp:\t/lairs, /go [lair/new lair], /flee, /folks, /[codename] [secretMessage]");
+			sendMessage("\r\nHelp:\t/rooms, /go [room/new room], /flee, /folks, /[codename] [secretMessage]");
 			sendMessage("\nWhat is your secret codename?");
 			userName = recv.readLine().replace(" ", "_");					//read name
 
@@ -68,7 +68,7 @@ public class ServerThread extends Thread {
 				userName = recv.readLine();
 			}
 
-			sendMessage("Welcome, "+userName+". Enjoy your 100% totally unmonitored secret chat...\n\n");	//Greet spy victim
+			sendMessage("Welcome, "+userName+". Enjoy your totally unmonitored (trust us) secret chat...\n\n");	//Greet spy victim
 
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -80,7 +80,7 @@ public class ServerThread extends Thread {
 	*/
 	private void parseCommand(String cmd) {
 		try {
-			if (cmd.indexOf("/lairs") != -1) {
+			if (cmd.indexOf("/rooms") != -1) {
 				process.getRooms(this);								//provide room listing
 
 			} else if (cmd.indexOf("/go ") != -1) {
@@ -90,8 +90,6 @@ public class ServerThread extends Thread {
 				
 			} else if (cmd.indexOf("/flee") != -1) {
 				currentRoom.broadcast("Delivery Service", userName+" has fled the scene.");	//Notify room of leave
-				//currentRoom.leave(userName);							//leave
-				//process.removeClient(this);							//log off
 				this.stop = true;								//exit
 
 			} else if (cmd.indexOf("/folks") != -1) {

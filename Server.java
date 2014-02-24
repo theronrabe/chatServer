@@ -31,7 +31,7 @@ public class Server {
 		chatrooms.put("Secrecy Central", new Room(this, "Secrecy Central", true));
 		chatrooms.put("Thieve's Guild", new Room(this, "Thieve's Guild", true));	//Initialize an entryway
 		chatrooms.put("Criminal Corner", new Room(this, "Criminal Corner", true));
-		chatrooms.put("Lowlife Lair", new Room(this, "Lowlife Lair", true));
+		chatrooms.put("Foreign Spy Forum", new Room(this, "Foriegn Spy Forum", true));
 
 		System.out.println("___________________________________________________________________________________");
 		System.out.println("________________________\"SECRET\" MESSAGE DELIVERY SERVICE__________________________");
