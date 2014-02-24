@@ -13,20 +13,26 @@ import java.util.*;
 public class Room {
 	private Hashtable <String, ServerThread> members;		//Table of usernames to Threads in the room
 	private String name;						//Name of room
+	private Server process;						//parent server process
+	private boolean keep;						//should this be auto pruned?
 
 	/*
 	Room constructor
 	*/
-	public Room(String roomName) {
+	public Room(Server S, String roomName, boolean permanent) {
+		process = S;						//Assign server reference
 		members = new Hashtable <String, ServerThread> ();	//Instantiate members
 		name = roomName;					//Name the room
+		this.keep = permanent;
 	}
 
 	/*
 	join: adds a user to this room
 	*/
 	public void join(String userName, ServerThread conn) {
-		members.put(userName, conn);
+		members.put(userName, conn);				//contribute member to list
+		broadcast("Delivery Service", userName+" has strayed into "+name);	//alert everyone of new person
+		getMembers(conn);					//alert user of everyone else
 	}
 
 	/*
@@ -34,10 +40,19 @@ public class Room {
 	*/
 	public void leave(String userName) {
 		members.remove(userName);
+		broadcast("Delivery Service", userName+" has ditched "+name);
+		if(members.size() == 0 && !this.keep) process.removeRoom(this);	//auto-prune empty rooms
 	}
 
 	public String getName() {
 		return name;
+	}
+
+	/*
+	getSize: returns the number of users in this room
+	*/
+	public int getCount() {
+		return members.size();
 	}
 
 	/*

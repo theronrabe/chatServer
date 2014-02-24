@@ -2,7 +2,7 @@
 Theron Rabe
 ServerThread.java
 
-	This file represents a thread for our Server. Each thread correlates to a Socket.
+	This file represents a thread for our Server. Each thread correlates to a user.
 */
 import java.io.*;
 import java.net.*;
@@ -40,7 +40,7 @@ public class ServerThread extends Thread {
 	*/
 	public void sendMessage(String msg) throws IOException {
 		try {
-			send.writeChars(msg+"\n");
+			send.writeChars(msg+"\r\n");
 
 		} catch (IOException ioe) {
 			System.out.println("Error sending message.");
@@ -56,17 +56,19 @@ public class ServerThread extends Thread {
 		String name;				//a place to keep a name
 		
 		try {
-			sendMessage("\nWelcome to the chat server.");
-			sendMessage("Commands: /rooms, /join [room], /[username] [message], /leave, /users\n");
-			sendMessage("\nWho are you? ");					//Send greeting
-			userName = recv.readLine();					//read name
+			sendMessage("_________________________________________________________________________________________");
+			sendMessage("____________________________SECRET MESSAGE DELIVERY SERVICE______________________________");
+			sendMessage("___________________________________Theron Rabe. 2014.____________________________________");
+			sendMessage("\r\nHelp:\t/lairs, /go [lair/new lair], /flee, /folks, /[codename] [secretMessage]");
+			sendMessage("\nWhat is your secret codename?");
+			userName = recv.readLine().replace(" ", "_");					//read name
 
-			while (!process.registerUser(this, userName)) {			//Correct name-redundancy
-				sendMessage("Name taken. Try something else: ");
+			while (!process.registerUser(this, userName)) {					//Correct name-redundancy
+				sendMessage("That one's claimed, imposter! Try something else:");
 				userName = recv.readLine();
 			}
 
-			sendMessage("Welcome, "+userName+". Have a chat...\n\n");	//Regreet
+			sendMessage("Welcome, "+userName+". Enjoy your 100% totally unmonitored secret chat...\n\n");	//Greet spy victim
 
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -78,25 +80,33 @@ public class ServerThread extends Thread {
 	*/
 	private void parseCommand(String cmd) {
 		try {
-			if (cmd.indexOf("/rooms") != -1) {
+			if (cmd.indexOf("/lairs") != -1) {
 				process.getRooms(this);								//provide room listing
-			} else if (cmd.indexOf("/join") != -1) {
-				currentRoom = process.getRoom(cmd.replace("/join", ""));			//change rooms
-			} else if (cmd.indexOf("/leave") != -1) {
-				currentRoom.broadcast("SERVER", userName+" has left the room.");		//Notify room of leave
-				currentRoom.leave(userName);							//leave
-				process.removeClient(this);							//log off
+
+			} else if (cmd.indexOf("/go ") != -1) {
+				currentRoom.leave(userName);
+				currentRoom = process.getRoom(cmd.replace("/go ", ""));				//change rooms
+				currentRoom.join(userName, this);
+				
+			} else if (cmd.indexOf("/flee") != -1) {
+				currentRoom.broadcast("Delivery Service", userName+" has fled the scene.");	//Notify room of leave
+				//currentRoom.leave(userName);							//leave
+				//process.removeClient(this);							//log off
 				this.stop = true;								//exit
-			} else if (cmd.indexOf("/users") != -1) {
+
+			} else if (cmd.indexOf("/folks") != -1) {
 				currentRoom.getMembers(this);							//List room members
-			} else {
+
+			} else {								//Send a secret message
 				int index = (cmd.indexOf(" ") > -1)? cmd.indexOf(" ") : 0;
 				String name = cmd.substring(0, index).replace("/", "");		//grab recipient name
 				String msg = cmd.substring(index);				//grab message
-				ServerThread dst = process.getClient(name);					//grab destination thread
-				if(dst != null) dst.sendMessage("\nPrivate message, "+userName+":\t"+msg);	//send message
-				else sendMessage("SERVER:\tuser "+name+" not found.\n");			//fail with response
-				System.out.println("Private ("+userName+"->"+name+"):\t"+msg);			//log message
+				ServerThread dst = process.getClient(name);				//grab destination thread
+				if(dst != null) {
+					dst.sendMessage("\nSecret message from "+userName+":\t"+msg);	//send message
+					sendMessage("Message sent.");
+				} else sendMessage("Delivery Service:\tuser "+name+" must be hiding somewhere else...\n");	//fail with response, if needed
+				System.out.println("Private ("+userName+"->"+name+"):\t"+msg+"\n");		//log message for government surveillance
 			}
 
 		} catch (IOException ioe) {
@@ -125,10 +135,11 @@ public class ServerThread extends Thread {
 
 		try {
 			while (true) {
+				if(this.stop) return;			//Don't crash, test early
 				msg = recv.readLine();			//read input message
-				if(msg == null||this.stop) return;			//prevent any null-pointer exceptions. Client disconnected.
+				if(msg == null) return;			//prevent any null-pointer exceptions. Client disconnected.
 				if(msg.length() > 0) {
-					System.out.println(userName + " broadcasting message: " + msg);
+					System.out.println(userName + " in "+currentRoom.getName()+":\t" + msg);
 	
 					if(msg.charAt(0) == '/') parseCommand(msg);	//Is this a command?
 					else currentRoom.broadcast(userName, msg);	//spread the word

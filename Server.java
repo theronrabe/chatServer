@@ -14,8 +14,7 @@ import java.util.*;
 
 public class Server {
 	private Hashtable <String, ServerThread> connNames = new Hashtable <String, ServerThread> ();	//A table of name/thread pairs
-	private List <Room> chatrooms;									//A list of open rooms
-	private Room entrance;										//A first room
+	private Hashtable <String, Room> chatrooms = new Hashtable <String, Room> ();			//A list of open rooms
 
 	/*
 	Program enty point
@@ -29,9 +28,15 @@ public class Server {
 	Server constructor
 	*/
 	public Server(int portNumber) throws IOException {
-		chatrooms = new ArrayList <Room> ();			//instantiate room list
-		entrance = new Room("Entrance");			//create our entryway
-		chatrooms.add(entrance);				//Remember it in list
+		chatrooms.put("Secrecy Central", new Room(this, "Secrecy Central", true));
+		chatrooms.put("Thieve's Guild", new Room(this, "Thieve's Guild", true));	//Initialize an entryway
+		chatrooms.put("Criminal Corner", new Room(this, "Criminal Corner", true));
+		chatrooms.put("Lowlife Lair", new Room(this, "Lowlife Lair", true));
+
+		System.out.println("___________________________________________________________________________________");
+		System.out.println("________________________\"SECRET\" MESSAGE DELIVERY SERVICE__________________________");
+		System.out.println("________________________________Theron Rabe. 2014._________________________________");
+
 		listen(portNumber);					//puts Server class into listening loop
 	}
 
@@ -41,13 +46,13 @@ public class Server {
 	private void listen(int portNumber) throws IOException {
 		ServerSocket socks = new ServerSocket(portNumber);	//make ourselves a new socket server
 		Socket nextSocket;					//a Socket pointer for loop iteration
+
+		System.out.println("Up and spying on port " + portNumber + "...");
 	
-		System.out.println("Listening with socket server " + socks);
-		
 		while (true) {
 			nextSocket = socks.accept();				//get the next socket
-			System.out.println("Connection from " + nextSocket);
-			new ServerThread(this, nextSocket, entrance);		//give it a thread
+			System.out.println("New connection requested from " + nextSocket.getInetAddress());
+			new ServerThread(this, nextSocket, getRoom("Secrecy Central"));		//give it a thread
 		}
 	}
 
@@ -55,10 +60,10 @@ public class Server {
 	removeClient: removes a client (by thread id) from the Server.
 	*/
 	public void removeClient(ServerThread client) {
-		System.out.println("Logging out "+client.getUserName());
+		System.out.println("Logging out user "+client.getUserName());
 		try {
 			client.getSocket().close();				//try to close the socket
-			connNames.remove(client.getUserName());
+			connNames.remove(client.getUserName());			//remove from user list
 
 		} catch (IOException ioe) {
 			System.out.println("Error closing socket for"+client.getUserName());
@@ -79,20 +84,33 @@ public class Server {
 	}
 
 	public Room getRoom(String roomName) {
-		return entrance;
+		if(!chatrooms.containsKey(roomName)) {
+			chatrooms.put(roomName, new Room(this, roomName, false));		//create room, if it doesn't exist
+		}
+		return chatrooms.get(roomName);
+	}
+
+	public void removeRoom(Room R) {
+		chatrooms.remove(R.getName());
 	}
 
 	/*
 	getRooms: sends a list of the available rooms on the server to a user.
 	*/
 	public void getRooms(ServerThread user) {
-		try {
-			for (Room R : chatrooms) {
-				user.sendMessage("\t-"+R.getName());
+		Enumeration elms;		//an enumerator
+		String nextRoom;		//an iterator
+
+		elms = chatrooms.keys();			//grab enumeration
+		while (elms.hasMoreElements()) {
+			nextRoom = (String) elms.nextElement();	//grab iteration
+			try {
+				user.sendMessage("\t-"+nextRoom+" ("+chatrooms.get(nextRoom).getCount()+")");	//send room data
+
+			} catch (IOException ioe) {
+				System.out.println("Error sending room data.");
+				ioe.printStackTrace();
 			}
-		} catch (IOException ioe) {
-			System.out.println("Error sending room data.");
-			ioe.printStackTrace();
 		}
 	}
 
